@@ -21,6 +21,8 @@
 
 #include "osd.h"
 
+#ifdef M64P_OSD
+
 #include "oglft_c.h"
 
 #include <SDL.h>
@@ -595,3 +597,4 @@ static osd_message_t * osd_message_valid(osd_message_t *testmsg)
     return NULL;
 }
 
+#endif

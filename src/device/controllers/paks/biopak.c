@@ -28,7 +28,9 @@
 #include "api/m64p_types.h"
 #include "api/callbacks.h"
 
+#ifdef M64_USE_SDL
 #include <SDL_timer.h>
+#endif
 
 #include <string.h>
 
@@ -51,7 +53,11 @@ static void read_biopak(void* pak, uint16_t address, uint8_t* data, size_t size)
     struct biopak* bpk = (struct biopak*)pak;
 
     if (address == 0xc000) {
+#ifdef M64_USE_SDL
         uint32_t now = SDL_GetTicks();
+#else
+        uint32_t now = 0;
+#endif
         uint32_t period = UINT32_C(60*1000) / bpk->bpm;
         uint32_t k = now % period;
 

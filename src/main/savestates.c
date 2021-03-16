@@ -22,8 +22,11 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.          *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#ifdef M64_USE_SDL
 #include <SDL.h>
 #include <SDL_thread.h>
+#endif
+
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -67,7 +70,9 @@ static char *fname = NULL;
 static unsigned int slot = 0;
 static int autoinc_save_slot = 0;
 
+#ifdef M64_USE_SDL
 static SDL_mutex *savestates_lock;
+#endif
 
 struct savestate_work {
     char *filepath;
@@ -198,13 +203,20 @@ static int savestates_load_m64p(struct device* dev, char *filepath)
 
     uint32_t* cp0_regs = r4300_cp0_regs(&dev->r4300.cp0);
 
+#ifdef M64_USE_SDL
     SDL_LockMutex(savestates_lock);
+#endif
 
+
+    // fixme: figure out why gzopen isn't defined by zlib's 43583934 proxy defines
+#if 0
     f = gzopen(filepath, "rb");
     if(f==NULL)
     {
         main_message(M64MSG_STATUS, OSD_BOTTOM_LEFT, "Could not open state file: %s", filepath);
+#ifdef M64_USE_SDL
         SDL_UnlockMutex(savestates_lock);
+#endif
         return 0;
     }
 
@@ -213,7 +225,9 @@ static int savestates_load_m64p(struct device* dev, char *filepath)
     {
         main_message(M64MSG_STATUS, OSD_BOTTOM_LEFT, "Could not read header from state file %s", filepath);
         gzclose(f);
+#ifdef M64_USE_SDL
         SDL_UnlockMutex(savestates_lock);
+#endif
         return 0;
     }
     curr = header;
@@ -222,9 +236,12 @@ static int savestates_load_m64p(struct device* dev, char *filepath)
     {
         main_message(M64MSG_STATUS, OSD_BOTTOM_LEFT, "State file: %s is not a valid Mupen64plus savestate.", filepath);
         gzclose(f);
+#ifdef M64_USE_SDL
         SDL_UnlockMutex(savestates_lock);
+#endif
         return 0;
     }
+#endif
     curr += 8;
 
     version = *curr++;
@@ -234,16 +251,24 @@ static int savestates_load_m64p(struct device* dev, char *filepath)
     if((version >> 16) != (savestate_latest_version >> 16))
     {
         main_message(M64MSG_STATUS, OSD_BOTTOM_LEFT, "State version (%08x) isn't compatible. Please update Mupen64Plus.", version);
+#if 0
         gzclose(f);
+#endif
+#ifdef M64_USE_SDL
         SDL_UnlockMutex(savestates_lock);
+#endif
         return 0;
     }
 
     if(memcmp((char *)curr, ROM_SETTINGS.MD5, 32))
     {
         main_message(M64MSG_STATUS, OSD_BOTTOM_LEFT, "State ROM MD5 does not match current ROM.");
+#if 0
         gzclose(f);
+#endif
+#ifdef M64_USE_SDL
         SDL_UnlockMutex(savestates_lock);
+#endif
         return 0;
     }
     curr += 32;
@@ -254,24 +279,33 @@ static int savestates_load_m64p(struct device* dev, char *filepath)
     if (savestateData == NULL)
     {
         main_message(M64MSG_STATUS, OSD_BOTTOM_LEFT, "Insufficient memory to load state.");
+#if 0
         gzclose(f);
+#endif
+#ifdef M64_USE_SDL
         SDL_UnlockMutex(savestates_lock);
+#endif
         return 0;
     }
     if (version == 0x00010000) /* original savestate version */
     {
+#if 0
         if (gzread(f, savestateData, savestateSize) != (int)savestateSize ||
             (gzread(f, queue, sizeof(queue)) % 4) != 0)
         {
             main_message(M64MSG_STATUS, OSD_BOTTOM_LEFT, "Could not read Mupen64Plus savestate 1.0 data from %s", filepath);
             free(savestateData);
             gzclose(f);
+#ifdef M64_USE_SDL
             SDL_UnlockMutex(savestates_lock);
+#endif
             return 0;
         }
+#endif
     }
     else if (version == 0x00010100) // saves entire eventqueue plus 4-byte using_tlb flags
     {
+#if 0
         if (gzread(f, savestateData, savestateSize) != (int)savestateSize ||
             gzread(f, queue, sizeof(queue)) != sizeof(queue) ||
             gzread(f, using_tlb_data, sizeof(using_tlb_data)) != sizeof(using_tlb_data))
@@ -279,12 +313,16 @@ static int savestates_load_m64p(struct device* dev, char *filepath)
             main_message(M64MSG_STATUS, OSD_BOTTOM_LEFT, "Could not read Mupen64Plus savestate 1.1 data from %s", filepath);
             free(savestateData);
             gzclose(f);
+#ifdef M64_USE_SDL
             SDL_UnlockMutex(savestates_lock);
+#endif
             return 0;
         }
+#endif
     }
     else // version >= 0x00010200  saves entire eventqueue, 4-byte using_tlb flags and extra state
     {
+#if 0
         if (gzread(f, savestateData, savestateSize) != (int)savestateSize ||
             gzread(f, queue, sizeof(queue)) != sizeof(queue) ||
             gzread(f, using_tlb_data, sizeof(using_tlb_data)) != sizeof(using_tlb_data) ||
@@ -293,13 +331,20 @@ static int savestates_load_m64p(struct device* dev, char *filepath)
             main_message(M64MSG_STATUS, OSD_BOTTOM_LEFT, "Could not read Mupen64Plus savestate 1.2+ data from %s", filepath);
             free(savestateData);
             gzclose(f);
+#ifdef M64_USE_SDL
             SDL_UnlockMutex(savestates_lock);
+#endif
             return 0;
         }
+#endif
     }
 
+#if 0
     gzclose(f);
+#endif
+#ifdef M64_USE_SDL
     SDL_UnlockMutex(savestates_lock);
+#endif
 
     // Parse savestate
     dev->rdram.regs[0][RDRAM_CONFIG_REG]       = GETDATA(curr, uint32_t);
@@ -1474,10 +1519,14 @@ static void savestates_save_m64p_work(struct work_struct *work)
     int gzres;
     struct savestate_work *save = container_of(work, struct savestate_work, work);
 
+#ifdef M64_USE_SDL
     SDL_LockMutex(savestates_lock);
+#endif
 
     // Write the state to a GZIP file
+#if 0
     f = gzopen(save->filepath, "wb");
+#endif
 
     if (f==NULL)
     {
@@ -1486,6 +1535,7 @@ static void savestates_save_m64p_work(struct work_struct *work)
         return;
     }
 
+#if 0
     gzres = gzwrite(f, save->data, save->size);
     if ((gzres < 0) || ((size_t)gzres != save->size))
     {
@@ -1494,14 +1544,20 @@ static void savestates_save_m64p_work(struct work_struct *work)
         free(save->data);
         return;
     }
+#endif
 
+#if 0
     gzclose(f);
+#endif
+
     main_message(M64MSG_STATUS, OSD_BOTTOM_LEFT, "Saved state to: %s", namefrompath(save->filepath));
     free(save->data);
     free(save->filepath);
     free(save);
 
+#ifdef M64_USE_SDL
     SDL_UnlockMutex(savestates_lock);
+#endif
 }
 
 static int savestates_save_m64p(const struct device* dev, char *filepath)
@@ -2177,15 +2233,19 @@ int savestates_save(void)
 
 void savestates_init(void)
 {
+#ifdef M64_USE_SDL
     savestates_lock = SDL_CreateMutex();
     if (!savestates_lock) {
         DebugMessage(M64MSG_ERROR, "Could not create savestates list lock");
         return;
     }
+#endif
 }
 
 void savestates_deinit(void)
 {
+#ifdef M64_USE_SDL
     SDL_DestroyMutex(savestates_lock);
+#endif
     savestates_clear_job();
 }

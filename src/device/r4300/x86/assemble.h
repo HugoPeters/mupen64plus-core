@@ -22,6 +22,8 @@
 #ifndef M64P_DEVICE_R4300_X86_ASSEMBLE_H
 #define M64P_DEVICE_R4300_X86_ASSEMBLE_H
 
+#ifndef __x86_64__
+
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -873,5 +875,6 @@ static osal_inline void ffree_fpreg(int fpreg)
     put8(0xC0 + fpreg);
 }
 
+#endif
 #endif /* M64P_DEVICE_R4300_X86_ASSEMBLE_H */
 

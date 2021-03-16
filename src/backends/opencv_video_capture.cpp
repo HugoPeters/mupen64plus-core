@@ -19,6 +19,8 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.          *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#ifdef N64_USE_OPENCV
+
 #include "opencv2/core/version.hpp"
 
 #if CV_MAJOR_VERSION >= 3
@@ -214,3 +216,4 @@ extern "C" const struct video_capture_backend_interface g_iopencv_video_capture_
 };
 
 }
+#endif

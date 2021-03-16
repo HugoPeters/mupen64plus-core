@@ -19,7 +19,11 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.          *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#ifdef M64_USE_PNG
+
+#ifdef M64_USE_SDL
 #include <SDL.h>
+#endif
 #include <ctype.h>
 #include <png.h>
 #include <setjmp.h>
@@ -205,6 +209,7 @@ static char *GetNextScreenshotPath(void)
 
     return ScreenshotPath;
 }
+#endif
 
 /*********************************************************************************************************
 * Global screenshot functions
@@ -212,11 +217,14 @@ static char *GetNextScreenshotPath(void)
 
 void ScreenshotRomOpen(void)
 {
+#ifdef M64_USE_PNG
     CurrentShotIndex = 0;
+#endif
 }
 
 void TakeScreenshot(int iFrameNumber)
 {
+#ifdef M64_USE_PNG
     char *filename;
 
     // look for an unused screenshot filename
@@ -247,5 +255,6 @@ void TakeScreenshot(int iFrameNumber)
     free(filename);
     // print message -- this allows developers to capture frames and use them in the regression test
     main_message(M64MSG_INFO, OSD_BOTTOM_LEFT, "Captured screenshot for frame %i.", iFrameNumber);
+#endif
 }
 

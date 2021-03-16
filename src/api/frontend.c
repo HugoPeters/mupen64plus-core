@@ -24,7 +24,10 @@
  * outside of the core library.
  */
 
+#ifdef M64_USE_SDL
 #include <SDL.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -63,7 +66,11 @@ EXPORT m64p_error CALL CoreStartup(int APIVersion, const char *ConfigPath, const
         return M64ERR_ALREADY_INIT;
 
     /* check wether the caller has already initialized SDL */
+#ifdef M64_USE_SDL
     l_CallerUsingSDL = (SDL_WasInit(0) != 0);
+#else
+    l_CallerUsingSDL = 0;
+#endif
 
     /* very first thing is to set the callback functions for debug info and state changing*/
     SetDebugCallback(DebugCallback, Context);
@@ -122,9 +129,11 @@ EXPORT m64p_error CALL CoreShutdown(void)
     workqueue_shutdown();
     savestates_deinit();
 
+#ifdef M64_USE_SDL
     /* if the calling code is using SDL, don't shut it down */
     if (!l_CallerUsingSDL)
         SDL_Quit();
+#endif
 
     /* deallocate base memory */
     release_mem_base(g_mem_base);
@@ -284,14 +293,18 @@ EXPORT m64p_error CALL CoreDoCommand(m64p_command Command, int ParamInt, void *P
                 return M64ERR_INVALID_STATE;
             keysym = ParamInt & 0xffff;
             keymod = (ParamInt >> 16) & 0xffff;
+#ifdef M64_USE_SDL
             event_sdl_keydown(keysym, keymod);
+#endif
             return M64ERR_SUCCESS;
         case M64CMD_SEND_SDL_KEYUP:
             if (!g_EmulatorRunning)
                 return M64ERR_INVALID_STATE;
             keysym = ParamInt & 0xffff;
             keymod = (ParamInt >> 16) & 0xffff;
+#ifdef M64_USE_SDL
             event_sdl_keyup(keysym, keymod);
+#endif
             return M64ERR_SUCCESS;
         case M64CMD_SET_FRAME_CALLBACK:
             *(void**)&g_FrameCallback = ParamPtr;

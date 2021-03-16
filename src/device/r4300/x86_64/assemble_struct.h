@@ -23,6 +23,8 @@
 #ifndef M64P_DEVICE_R4300_X86_64_ASSEMBLE_STRUCT_H
 #define M64P_DEVICE_R4300_X86_64_ASSEMBLE_STRUCT_H
 
+#ifdef __x86_64__
+
 struct precomp_instr;
 
 struct regcache_state {
@@ -55,6 +57,8 @@ struct riprelative_table
     unsigned int   extra_bytes; /* number of remaining instruction bytes (immediate data) after 4-byte displacement */
     unsigned char *global_dst;  /* 64-bit pointer to the data object */
 };
+
+#endif
 
 
 #endif /* M64P_DEVICE_R4300_X86_64_ASSEMBLE_STRUCT_H */

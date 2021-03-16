@@ -18,6 +18,8 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.          *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#ifdef NEW_DYNAREC
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -11327,3 +11329,5 @@ static void write_dword_new(int pcaddr, int count, int diff)
   r4300->delay_slot = 0;
   state->cycle_count = r4300_cp0_regs(&r4300->cp0)[CP0_COUNT_REG] - state->next_interrupt - diff;
 }
+
+#endif

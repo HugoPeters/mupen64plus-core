@@ -23,6 +23,8 @@
  * functions
  */
 
+#ifdef M64_PLATFORM_MACOS
+
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -223,3 +225,5 @@ const char * osal_get_user_cachepath(void)
     return osal_get_user_configpath();
 }
 
+
+#endif

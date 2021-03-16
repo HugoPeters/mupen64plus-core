@@ -18,6 +18,10 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.          *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#include "../new_dynarec.h"
+
+#if NEW_DYNAREC == NEW_DYNAREC_X64
+
 void jump_vaddr_eax(void);
 void jump_vaddr_ecx(void);
 void jump_vaddr_edx(void);
@@ -4810,3 +4814,5 @@ static void arch_init()
 
   g_dev.r4300.new_dynarec_hot_state.ram_offset=(intptr_t)g_dev.rdram.dram-(intptr_t)0x80000000LL;
 }
+
+#endif

@@ -20,11 +20,16 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.          *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#ifdef M64_USE_SDL
 #include <SDL.h>
 #include <SDL_syswm.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef M64_USE_SDL
 #if ! SDL_VERSION_ATLEAST(1,3,0)
 
 #define SDL_SCANCODE_ESCAPE SDLK_ESCAPE
@@ -60,6 +65,8 @@
 
 #else
 	 SDL_JoystickID l_iJoyInstanceID[10];
+#endif
+
 #endif
 
 #define M64P_CORE_PROTOTYPES 1
@@ -154,6 +161,7 @@ static int GamesharkActive = 0;
  *    a 1 is returned.  If the event de-activates an command, a -1 is returned.  Otherwise
  *    (if the event does not match the command or active status didn't change), a 0 is returned.
  */
+#ifdef M64_USE_SDL
 static int MatchJoyCommand(const SDL_Event *event, eJoyCommand cmd)
 {
     const char *multi_event_str = ConfigGetParamString(l_CoreEventsConfig, JoyCmdName[cmd]);
@@ -419,6 +427,7 @@ static int SDLCALL event_sdl_filter(void *userdata, SDL_Event *event)
 
     return 1;  // add this event to SDL queue
 }
+#endif
 
 /*********************************************************************************************************
 * global functions
@@ -434,6 +443,7 @@ void event_initialize(void)
             JoyCmdActive[i][j] = 0;
 
     /* activate any joysticks which are referenced in the joystick event command strings */
+#ifdef M64_USE_SDL
     const int NumJoysticks = SDL_NumJoysticks();
     if (NumJoysticks > 0)
     {
@@ -505,6 +515,8 @@ void event_initialize(void)
     if (SDL_EventState(SDL_SYSWMEVENT, SDL_QUERY) != SDL_ENABLE)
         DebugMessage(M64MSG_WARNING, "Failed to change event state: %s", SDL_GetError());
 #endif
+
+#endif
 }
 
 int event_set_core_defaults(void)
@@ -538,6 +550,8 @@ int event_set_core_defaults(void)
     }
 
     ConfigSetDefaultFloat(l_CoreEventsConfig, "Version", CONFIG_PARAM_VERSION,  "Mupen64Plus CoreEvents config parameter set version number.  Please don't change this version number.");
+    
+#ifdef M64_USE_SDL
     /* Keyboard presses mapped to core functions */
     char kbdSaveSlotStr[sizeof(kbdSaveSlot)+1];
     char kbdSaveSlotHelpStr[27];
@@ -569,6 +583,7 @@ int event_set_core_defaults(void)
     ConfigSetDefaultInt(l_CoreEventsConfig, kbdForward, sdl_native2keysym(SDL_SCANCODE_F),            "SDL keysym for temporarily going really fast");
     ConfigSetDefaultInt(l_CoreEventsConfig, kbdAdvance, sdl_native2keysym(SDL_SCANCODE_SLASH),        "SDL keysym for advancing by one frame when paused");
     ConfigSetDefaultInt(l_CoreEventsConfig, kbdGameshark, sdl_native2keysym(SDL_SCANCODE_G),          "SDL keysym for pressing the game shark button");
+#endif
     /* Joystick events mapped to core functions */
     ConfigSetDefaultString(l_CoreEventsConfig, JoyCmdName[joyStop], "",       "Joystick event string for stopping the emulator");
     ConfigSetDefaultString(l_CoreEventsConfig, JoyCmdName[joyFullscreen], "", "Joystick event string for switching between fullscreen/windowed modes");
@@ -608,7 +623,7 @@ static int get_saveslot_from_keysym(int keysym)
 /*********************************************************************************************************
 * sdl keyup/keydown handlers
 */
-
+#ifdef M64_USE_SDL
 void event_sdl_keydown(int keysym, int keymod)
 {
     int slot;
@@ -657,7 +672,6 @@ void event_sdl_keydown(int keysym, int keymod)
         /* pass all other keypresses to the input plugin */
         input.keyDown(keymod, keysym);
     }
-
 }
 
 void event_sdl_keyup(int keysym, int keymod)
@@ -677,6 +691,7 @@ void event_sdl_keyup(int keysym, int keymod)
     else input.keyUp(keymod, keysym);
 
 }
+#endif
 
 int event_gameshark_active(void)
 {

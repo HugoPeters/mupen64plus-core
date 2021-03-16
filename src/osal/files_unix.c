@@ -23,6 +23,8 @@
  * functions
  */
 
+#ifdef M64_PLATFORM_UNIX
+
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -233,3 +235,4 @@ const char * osal_get_user_cachepath(void)
 }
 
 
+#endif

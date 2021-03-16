@@ -18,7 +18,9 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.          *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#define RECOMP_DBG
+//#define RECOMP_DBG
+
+#ifdef RECOMP_DBG
 
 #if RECOMPILER_DEBUG == 1 //x86
 #if NEW_DYNAREC != 1 //x86
@@ -39,7 +41,7 @@
 #endif
 
 #undef NEW_DYNAREC
-#define NEW_DYNAREC RECOMPILER_DEBUG
+//#define NEW_DYNAREC RECOMPILER_DEBUG
 
 /* Rename non-static variables */
 #define base_addr                               recomp_dbg_base_addr
@@ -133,9 +135,13 @@ ALIGN(4096, static char recomp_dbg_extra_memory[33554432]);
 
 // Recompile new_dynarec.c with the above redefinitions
 #include "new_dynarec.c"
+#include "main/main.h"
+#include "device/device.h"
+#include "device/r4300/cached_interp.h"
+#include "device/r4300/fpu.h"
 
 #include <inttypes.h>
-#include <capstone.h>
+//#include <capstone.h>
 #if RECOMPILER_DEBUG == NEW_DYNAREC_X86
     #define ARCHITECTURE CS_ARCH_X86
     #define MODE CS_MODE_32
@@ -174,6 +180,7 @@ typedef struct{
   char * name;
 }Variable_t;
 
+#ifdef NEW_DYNAREC
 static Variable_t var[] = {
   {(intptr_t)NULL /*RDRAM*/, 0, "rdram - 0x80000000"},
   {(intptr_t)g_dev.r4300.cached_interp.invalid_code, sizeof(g_dev.r4300.cached_interp.invalid_code), "invalid_code"},
@@ -345,6 +352,7 @@ static Variable_t var[] = {
   {(intptr_t)&g_dev.r4300.new_dynarec_hot_state.memory_map, sizeof(g_dev.r4300.new_dynarec_hot_state.memory_map), "memory_map"},
   {-1, -1, NULL}
 };
+#endif
 
 typedef struct{
   intptr_t addr;
@@ -352,8 +360,10 @@ typedef struct{
 }Function_t;
 
 static Function_t func[] = {
+#ifdef NEW_DYNAREC
   {(intptr_t)MFC0_new, "MFC0"},
   {(intptr_t)MTC0_new, "MTC0"},
+#endif
   {(intptr_t)cached_interp_TLBR, "TLBR"},
   {(intptr_t)cached_interp_TLBP, "TLBP"},
   {(intptr_t)cached_interp_DMULT, "DMULT"},
@@ -400,7 +410,7 @@ static Function_t func[] = {
   {(intptr_t)invalidate_addr_r9," invalidate_addr_r9"},
   {(intptr_t)invalidate_addr_r10," invalidate_addr_r10"},
   {(intptr_t)invalidate_addr_r12," invalidate_addr_r12"},
-#else //ARM64
+#elif RECOMPILER_DEBUG == NEW_DYNAREC_ARM64
   {(intptr_t)invalidate_addr, "invalidate_addr"},
   {(intptr_t)jump_vaddr_x0, "jump_vaddr_x0"},
   {(intptr_t)jump_vaddr_x1, "jump_vaddr_x1"},
@@ -432,6 +442,7 @@ static Function_t func[] = {
   {(intptr_t)jump_vaddr_x27, "jump_vaddr_x27"},
   {(intptr_t)jump_vaddr_x28, "jump_vaddr_x28"},
 #endif
+#ifdef NEW_DYNAREC
   {(intptr_t)dyna_linker, "dyna_linker"},
   {(intptr_t)dyna_linker_ds, "dyna_linker_ds"},
   {(intptr_t)TLBWI_new, "TLBWI_new"},
@@ -451,6 +462,7 @@ static Function_t func[] = {
   {(intptr_t)write_hword_new, "write_hword_new"},
   {(intptr_t)write_word_new, "write_word_new"},
   {(intptr_t)write_dword_new, "write_dword_new"},
+#endif
   {(intptr_t)cvt_s_w, "cvt_s_w"},
   {(intptr_t)cvt_d_w, "cvt_d_w"},
   {(intptr_t)cvt_s_l, "cvt_s_l"},
@@ -525,7 +537,9 @@ static Function_t func[] = {
   {(intptr_t)abs_d, "abs_d"},
   {(intptr_t)mov_d, "mov_d"},
   {(intptr_t)neg_d, "neg_d"},
+#ifdef NEW_DYNAREC
   {(intptr_t)breakpoint, "breakpoint"},
+#endif
   {-1, NULL}
 };
 
@@ -1032,3 +1046,5 @@ extern unsigned int using_tlb;
   fflush(pFile);
   fclose(pFile);
 }
+
+#endif

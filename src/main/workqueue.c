@@ -21,8 +21,12 @@
 
 #include "workqueue.h"
 
+#ifdef M64P_PARALLEL
+
+#ifdef M64_USE_SDL
 #include <SDL.h>
 #include <SDL_thread.h>
+#endif
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,12 +41,16 @@ struct workqueue_mgmt_globals {
     struct list_head work_queue;
     struct list_head thread_queue;
     struct list_head thread_list;
+#ifdef M64_USE_SDL
     SDL_mutex *lock;
+#endif
 };
 
 struct workqueue_thread {
+#ifdef M64_USE_SDL
     SDL_Thread *thread;
     SDL_cond *work_avail;
+#endif
     struct list_head list;
     struct list_head list_mgmt;
 };
@@ -59,7 +67,9 @@ static struct work_struct *workqueue_get_work(struct workqueue_thread *thread)
     struct work_struct *work;
 
     for (;;) {
+#ifdef M64_USE_SDL
         SDL_LockMutex(workqueue_mgmt.lock);
+#endif
         list_del_init(&thread->list);
         if (!list_empty(&workqueue_mgmt.work_queue)) {
             found = 1;
@@ -67,9 +77,13 @@ static struct work_struct *workqueue_get_work(struct workqueue_thread *thread)
             list_del_init(&work->list);
         } else {
             list_add(&thread->list, &workqueue_mgmt.thread_queue);
+#ifdef M64_USE_SDL
 	        SDL_CondWait(thread->work_avail, workqueue_mgmt.lock);
+#endif
         }
+#ifdef M64_USE_SDL
         SDL_UnlockMutex(workqueue_mgmt.lock);
+#endif
 
         if (found)
             break;
@@ -106,6 +120,7 @@ int workqueue_init(void)
     INIT_LIST_HEAD(&workqueue_mgmt.thread_queue);
     INIT_LIST_HEAD(&workqueue_mgmt.thread_list);
 
+#ifdef M64_USE_SDL
     workqueue_mgmt.lock = SDL_CreateMutex();
     if (!workqueue_mgmt.lock) {
         DebugMessage(M64MSG_ERROR, "Could not create workqueue management");
@@ -143,6 +158,7 @@ int workqueue_init(void)
         }
     }
     SDL_UnlockMutex(workqueue_mgmt.lock);
+#endif
 
     return 0;
 }
@@ -162,30 +178,41 @@ void workqueue_shutdown(void)
 
     list_for_each_entry_safe_t(thread, safe, &workqueue_mgmt.thread_list, struct workqueue_thread, list_mgmt) {
         list_del(&thread->list_mgmt);
+#ifdef M64_USE_SDL
         SDL_WaitThread(thread->thread, &status);
         SDL_DestroyCond(thread->work_avail);
+#endif
         free(thread);
     }
 
     if (!list_empty(&workqueue_mgmt.work_queue))
         DebugMessage(M64MSG_WARNING, "Stopped workqueue with work still pending");
 
+#ifdef M64_USE_SDL
     SDL_DestroyMutex(workqueue_mgmt.lock);
+#endif
 }
 
 int queue_work(struct work_struct *work)
 {
     struct workqueue_thread *thread;
 
+#ifdef M64_USE_SDL
     SDL_LockMutex(workqueue_mgmt.lock);
+#endif
     list_add_tail(&work->list, &workqueue_mgmt.work_queue);
     if (!list_empty(&workqueue_mgmt.thread_queue)) {
         thread = list_first_entry(&workqueue_mgmt.thread_queue, struct workqueue_thread, list);
         list_del_init(&thread->list);
 
+#ifdef M64_USE_SDL
         SDL_CondSignal(thread->work_avail);
+#endif
     }
+#ifdef M64_USE_SDL
     SDL_UnlockMutex(workqueue_mgmt.lock);
-
+#endif
     return 0;
 }
+
+#endif

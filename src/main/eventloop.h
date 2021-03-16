@@ -24,8 +24,10 @@
 
 extern int event_set_core_defaults(void);
 extern void event_initialize(void);
+#ifdef M64_USE_SDL
 extern void event_sdl_keydown(int keysym, int keymod);
 extern void event_sdl_keyup(int keysym, int keymod);
+#endif
 extern int event_gameshark_active(void);
 extern void event_set_gameshark(int active);
 

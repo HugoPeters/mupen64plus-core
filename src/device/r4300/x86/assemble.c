@@ -19,6 +19,8 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.          *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#ifndef __x86_64__
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -125,3 +127,5 @@ void jump_end_rel32(struct r4300_core* r4300)
     put32(jump_vec);
     r4300->recomp.code_length = jump_end;
 }
+
+#endif

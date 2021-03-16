@@ -19,6 +19,8 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.          *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#ifdef M64P_OSD
+
 #include "oglft_c.h"
 
 #include <OGLFT.h>
@@ -136,3 +138,5 @@ extern "C" void OGLFT_Face_destroy(struct OGLFT_Face* face)
         delete reinterpret_cast<OGLFT::Face*>(face);
     } catch(...) { /* swallow error */ }
 }
+
+#endif

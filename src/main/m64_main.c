@@ -28,7 +28,9 @@
  * if you want to implement an interface, you should look here
  */
 
+#ifdef M64_USE_SDL
 #include <SDL.h>
+#endif
 #include <assert.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -301,7 +303,9 @@ static void main_check_inputs(void)
 #ifdef WITH_LIRC
     lircCheckInput();
 #endif
+#ifdef M64_USE_SDL
     SDL_PumpEvents();
+#endif
 }
 
 /*********************************************************************************************************
@@ -858,7 +862,11 @@ static void apply_speed_limiter(void)
     static int lastSpeedFactor = 100;
     static unsigned int StartFPSTime = 0;
     static const double defaultSpeedFactor = 100.0;
+#ifdef M64_USE_SDL
     unsigned int CurrentFPSTime = SDL_GetTicks();
+#else
+    unsigned int CurrentFPSTime = 0;
+#endif
     static double sleepTimes[SAMPLE_COUNT];
     static unsigned int sleepTimesIndex = 0;
 
@@ -922,7 +930,9 @@ static void apply_speed_limiter(void)
     {
        DebugMessage(M64MSG_VERBOSE, "    apply_speed_limiter(): Waiting %ims", sleepMs);
 
+#ifdef M64_USE_SDL
        SDL_Delay(sleepMs);
+#endif
     }
 
 
@@ -956,7 +966,9 @@ static void pause_loop(void)
         VidExt_GL_SwapBuffers();
         while(g_rom_pause)
         {
+#ifdef M64_USE_SDL
             SDL_Delay(10);
+#endif
             main_check_inputs();
         }
     }

@@ -20,6 +20,8 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.          *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#ifdef __x86_64__
+
 #include <stdint.h>
 #include <stdio.h>
 
@@ -649,3 +651,4 @@ void build_wrappers(struct r4300_core* r4300, struct precomp_instr *instr, int s
     }
 }
 
+#endif

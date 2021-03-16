@@ -23,6 +23,8 @@
 #ifndef M64P_DEVICE_R4300_X86_64_REGCACHE_H
 #define M64P_DEVICE_R4300_X86_64_REGCACHE_H
 
+#ifdef __x86_64__
+
 struct r4300_core;
 struct precomp_instr;
 struct precomp_block;
@@ -44,6 +46,8 @@ int allocate_register_64_w(struct r4300_core* r4300, unsigned long long *addr);
 void allocate_register_32_manually(struct r4300_core* r4300, int reg, unsigned int *addr);
 void allocate_register_32_manually_w(struct r4300_core* r4300, int reg, unsigned int *addr);
 void build_wrappers(struct r4300_core* r4300, struct precomp_instr*, int, int, struct precomp_block*);
+
+#endif
 
 #endif /* M64P_DEVICE_R4300_X86_64_REGCACHE_H */
 

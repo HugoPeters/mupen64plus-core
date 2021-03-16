@@ -22,8 +22,10 @@
 
 /* gameshark and xploder64 reference: http://doc.kodewerx.net/hacking_n64.html */
 
+#ifdef M64_USE_SDL
 #include <SDL.h>
 #include <SDL_thread.h>
+#endif
 
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
@@ -193,15 +195,19 @@ static cheat_t *find_or_create_cheat(struct cheat_ctx* ctx, const char *name)
 /* public functions */
 void cheat_init(struct cheat_ctx* ctx)
 {
+#ifdef M64_USE_SDL
     ctx->mutex = SDL_CreateMutex();
+#endif
     INIT_LIST_HEAD(&ctx->active_cheats);
 }
 
 void cheat_uninit(struct cheat_ctx* ctx)
 {
+#ifdef M64_USE_SDL
     if (ctx->mutex != NULL) {
         SDL_DestroyMutex(ctx->mutex);
     }
+#endif
     ctx->mutex = NULL;
 }
 
@@ -214,11 +220,13 @@ void cheat_apply_cheats(struct cheat_ctx* ctx, struct r4300_core* r4300, int ent
     if (list_empty(&ctx->active_cheats))
         return;
 
+#ifdef M64_USE_SDL
     if (ctx->mutex == NULL || SDL_LockMutex(ctx->mutex) != 0)
     {
         DebugMessage(M64MSG_ERROR, "Internal error: failed to lock mutex in cheat_apply_cheats()");
         return;
     }
+#endif
 
     list_for_each_entry_t(cheat, &ctx->active_cheats, cheat_t, list) {
         if (cheat->enabled)
@@ -313,7 +321,9 @@ void cheat_apply_cheats(struct cheat_ctx* ctx, struct r4300_core* r4300, int ent
         }
     }
 
+#ifdef M64_USE_SDL
     SDL_UnlockMutex(ctx->mutex);
+#endif
 }
 
 
@@ -325,11 +335,13 @@ void cheat_delete_all(struct cheat_ctx* ctx)
     if (list_empty(&ctx->active_cheats))
         return;
 
+#ifdef M64_USE_SDL
     if (ctx->mutex == NULL || SDL_LockMutex(ctx->mutex) != 0)
     {
         DebugMessage(M64MSG_ERROR, "Internal error: failed to lock mutex in cheat_delete_all()");
         return;
     }
+#endif
 
     list_for_each_entry_safe_t(cheat, safe_cheat, &ctx->active_cheats, cheat_t, list) {
         free(cheat->name);
@@ -342,7 +354,9 @@ void cheat_delete_all(struct cheat_ctx* ctx)
         free(cheat);
     }
 
+#ifdef M64_USE_SDL
     SDL_UnlockMutex(ctx->mutex);
+#endif
 }
 
 int cheat_set_enabled(struct cheat_ctx* ctx, const char* name, int enabled)
@@ -352,22 +366,28 @@ int cheat_set_enabled(struct cheat_ctx* ctx, const char* name, int enabled)
     if (list_empty(&ctx->active_cheats))
         return 0;
 
+#ifdef M64_USE_SDL
     if (ctx->mutex == NULL || SDL_LockMutex(ctx->mutex) != 0)
     {
         DebugMessage(M64MSG_ERROR, "Internal error: failed to lock mutex in cheat_set_enabled()");
         return 0;
     }
+#endif
 
     list_for_each_entry_t(cheat, &ctx->active_cheats, cheat_t, list) {
         if (strcmp(name, cheat->name) == 0)
         {
             cheat->enabled = enabled;
+#ifdef M64_USE_SDL
             SDL_UnlockMutex(ctx->mutex);
+#endif
             return 1;
         }
     }
 
+#ifdef M64_USE_SDL
     SDL_UnlockMutex(ctx->mutex);
+#endif
     return 0;
 }
 
@@ -376,17 +396,21 @@ int cheat_add_new(struct cheat_ctx* ctx, const char* name, m64p_cheat_code* code
     cheat_t *cheat;
     int i, j;
 
+#ifdef M64_USE_SDL
     if (ctx->mutex == NULL || SDL_LockMutex(ctx->mutex) != 0)
     {
         DebugMessage(M64MSG_ERROR, "Internal error: failed to lock mutex in cheat_add_new()");
         return 0;
     }
+#endif
 
     /* create a new cheat function or erase the codes in an existing cheat function */
     cheat = find_or_create_cheat(ctx, name);
     if (cheat == NULL)
     {
+#ifdef M64_USE_SDL
         SDL_UnlockMutex(ctx->mutex);
+#endif
         return 0;
     }
 
@@ -426,7 +450,9 @@ int cheat_add_new(struct cheat_ctx* ctx, const char* name, m64p_cheat_code* code
         }
     }
 
+#ifdef M64_USE_SDL
     SDL_UnlockMutex(ctx->mutex);
+#endif
     return 1;
 }
 

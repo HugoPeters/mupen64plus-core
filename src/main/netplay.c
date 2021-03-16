@@ -19,6 +19,8 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.          *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#ifdef M64P_NETPLAY
+
 #define M64P_CORE_PROTOTYPES 1
 #include "api/callbacks.h"
 #include "main.h"
@@ -695,3 +697,5 @@ m64p_error netplay_receive_config(char* data, int size)
     else
         return M64ERR_INVALID_STATE;
 }
+
+#endif

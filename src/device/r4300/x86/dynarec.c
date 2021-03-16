@@ -19,6 +19,8 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.          *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#ifndef __x86_64__
+
 #include "assemble.h"
 #include "interpret.h"
 #include "regcache.h"
@@ -5656,3 +5658,5 @@ void gen_CP1_C_NGT_D(struct r4300_core* r4300)
     and_m32_imm32((unsigned int*)&(*r4300_cp1_fcr31(&r4300->cp1)), ~0x800000); // 10
 #endif
 }
+
+#endif

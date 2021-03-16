@@ -18,6 +18,10 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.          *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#include "../new_dynarec.h"
+
+#if NEW_DYNAREC == NEW_DYNAREC_ARM64
+
 #define fp_cycle_count         (offsetof(struct new_dynarec_hot_state, cycle_count))
 #define fp_invc_ptr            (offsetof(struct new_dynarec_hot_state, invc_ptr))
 #define fp_fcr31               (offsetof(struct new_dynarec_hot_state, fcr31))
@@ -5204,3 +5208,5 @@ static void arch_init(void) {
     ptr3+=2;
   }
 }
+
+#endif

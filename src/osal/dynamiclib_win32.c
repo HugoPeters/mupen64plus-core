@@ -19,6 +19,9 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.          *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+
+#ifdef M64_PLATFORM_WIN
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
@@ -38,3 +41,5 @@ OSAL_NO_WARNING_FPTR_VOIDP_CAST
     return (m64p_function)GetProcAddress(LibHandle, pccProcedureName);
 OSAL_WARNING_POP
 }
+
+#endif

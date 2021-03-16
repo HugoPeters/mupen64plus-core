@@ -19,6 +19,8 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.          *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#ifndef __x86_64__
+
 #include <stdio.h>
 
 #include "assemble.h"
@@ -815,3 +817,4 @@ void simplify_access(struct r4300_core* r4300)
     for(i=0; i<8; i++) r4300->recomp.dst->reg_cache_infos.needed_registers[i] = NULL;
 }
 
+#endif
