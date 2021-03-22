@@ -163,6 +163,26 @@ EXPORT m64p_error CALL CoreAttachPlugin(m64p_plugin_type PluginType, m64p_dynlib
     return M64ERR_SUCCESS;
 }
 
+EXPORT m64p_error CALL CoreAttachPluginFuncs(m64p_plugin_type PluginType, void* PluginFuncs)
+{
+    m64p_error rval;
+
+    if (!l_CoreInit)
+        return M64ERR_NOT_INIT;
+    if (g_EmulatorRunning || !l_ROMOpen)
+        return M64ERR_INVALID_STATE;
+
+    rval = plugin_connect_funcs(PluginType, PluginFuncs);
+    if (rval != M64ERR_SUCCESS)
+        return rval;
+
+    rval = plugin_start(PluginType);
+    if (rval != M64ERR_SUCCESS)
+        return rval;
+
+    return M64ERR_SUCCESS;
+}
+
 EXPORT m64p_error CALL CoreDetachPlugin(m64p_plugin_type PluginType)
 {
     if (!l_CoreInit)

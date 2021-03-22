@@ -156,72 +156,95 @@ static void plugin_disconnect_gfx(void)
     l_mainRenderCallback = NULL;
 }
 
-static m64p_error plugin_connect_gfx(m64p_dynlib_handle plugin_handle)
+static m64p_error plugin_connect_gfx_api_dynlib(m64p_dynlib_handle plugin_handle, gfx_plugin_functions* out_funcs)
 {
-    /* attach the Video plugin function pointers */
     if (plugin_handle != NULL)
     {
-        m64p_plugin_type PluginType;
-        int PluginVersion, APIVersion;
-
-        if (l_GfxAttached)
-            return M64ERR_INVALID_STATE;
-
         /* set function pointers for required functions */
-        if (!GET_FUNC(ptr_PluginGetVersion, gfx.getVersion, "PluginGetVersion") ||
-            !GET_FUNC(ptr_ChangeWindow, gfx.changeWindow, "ChangeWindow") ||
-            !GET_FUNC(ptr_InitiateGFX, gfx.initiateGFX, "InitiateGFX") ||
-            !GET_FUNC(ptr_MoveScreen, gfx.moveScreen, "MoveScreen") ||
-            !GET_FUNC(ptr_ProcessDList, gfx.processDList, "ProcessDList") ||
-            !GET_FUNC(ptr_ProcessRDPList, gfx.processRDPList, "ProcessRDPList") ||
-            !GET_FUNC(ptr_RomClosed, gfx.romClosed, "RomClosed") ||
-            !GET_FUNC(ptr_RomOpen, gfx.romOpen, "RomOpen") ||
-            !GET_FUNC(ptr_ShowCFB, gfx.showCFB, "ShowCFB") ||
-            !GET_FUNC(ptr_UpdateScreen, gfx.updateScreen, "UpdateScreen") ||
-            !GET_FUNC(ptr_ViStatusChanged, gfx.viStatusChanged, "ViStatusChanged") ||
-            !GET_FUNC(ptr_ViWidthChanged, gfx.viWidthChanged, "ViWidthChanged") ||
-            !GET_FUNC(ptr_ReadScreen2, gfx.readScreen, "ReadScreen2") ||
-            !GET_FUNC(ptr_SetRenderingCallback, gfx.setRenderingCallback, "SetRenderingCallback") ||
-            !GET_FUNC(ptr_FBRead, gfx.fBRead, "FBRead") ||
-            !GET_FUNC(ptr_FBWrite, gfx.fBWrite, "FBWrite") ||
-            !GET_FUNC(ptr_FBGetFrameBufferInfo, gfx.fBGetFrameBufferInfo, "FBGetFrameBufferInfo"))
+        if (!GET_FUNC(ptr_PluginGetVersion, out_funcs->getVersion, "PluginGetVersion") ||
+            !GET_FUNC(ptr_ChangeWindow, out_funcs->changeWindow, "ChangeWindow") ||
+            !GET_FUNC(ptr_InitiateGFX, out_funcs->initiateGFX, "InitiateGFX") ||
+            !GET_FUNC(ptr_MoveScreen, out_funcs->moveScreen, "MoveScreen") ||
+            !GET_FUNC(ptr_ProcessDList, out_funcs->processDList, "ProcessDList") ||
+            !GET_FUNC(ptr_ProcessRDPList, out_funcs->processRDPList, "ProcessRDPList") ||
+            !GET_FUNC(ptr_RomClosed, out_funcs->romClosed, "RomClosed") ||
+            !GET_FUNC(ptr_RomOpen, out_funcs->romOpen, "RomOpen") ||
+            !GET_FUNC(ptr_ShowCFB, out_funcs->showCFB, "ShowCFB") ||
+            !GET_FUNC(ptr_UpdateScreen, out_funcs->updateScreen, "UpdateScreen") ||
+            !GET_FUNC(ptr_ViStatusChanged, out_funcs->viStatusChanged, "ViStatusChanged") ||
+            !GET_FUNC(ptr_ViWidthChanged, out_funcs->viWidthChanged, "ViWidthChanged") ||
+            !GET_FUNC(ptr_ReadScreen2, out_funcs->readScreen, "ReadScreen2") ||
+            !GET_FUNC(ptr_SetRenderingCallback, out_funcs->setRenderingCallback, "SetRenderingCallback") ||
+            !GET_FUNC(ptr_FBRead, out_funcs->fBRead, "FBRead") ||
+            !GET_FUNC(ptr_FBWrite, out_funcs->fBWrite, "FBWrite") ||
+            !GET_FUNC(ptr_FBGetFrameBufferInfo, out_funcs->fBGetFrameBufferInfo, "FBGetFrameBufferInfo"))
         {
             DebugMessage(M64MSG_ERROR, "broken Video plugin; function(s) not found.");
-            plugin_disconnect_gfx();
             return M64ERR_INPUT_INVALID;
         }
-
-        /* set function pointers for optional functions */
-        gfx.resizeVideoOutput = (ptr_ResizeVideoOutput)osal_dynlib_getproc(plugin_handle, "ResizeVideoOutput");
-
-        /* check the version info */
-        (*gfx.getVersion)(&PluginType, &PluginVersion, &APIVersion, NULL, NULL);
-        if (PluginType != M64PLUGIN_GFX || (APIVersion & 0xffff0000) != (GFX_API_VERSION & 0xffff0000))
-        {
-            DebugMessage(M64MSG_ERROR, "incompatible Video plugin");
-            plugin_disconnect_gfx();
-            return M64ERR_INCOMPATIBLE;
-        }
-
-        /* handle backwards-compatibility */
-        if (APIVersion < 0x020100)
-        {
-            DebugMessage(M64MSG_WARNING, "Fallback for Video plugin API (%02i.%02i.%02i) < 2.1.0. Screenshots may contain On Screen Display text", VERSION_PRINTF_SPLIT(APIVersion));
-            // tell the video plugin to make its rendering callback to me (it's old, and doesn't have the bScreenRedrawn flag)
-            gfx.setRenderingCallback(backcompat_videoRenderCallback);
-            l_old1SetRenderingCallback = gfx.setRenderingCallback; // save this just for future use
-            gfx.setRenderingCallback = (ptr_SetRenderingCallback) backcompat_setRenderCallbackIntercept;
-        }
-        if (APIVersion < 0x20200 || gfx.resizeVideoOutput == NULL)
-        {
-            DebugMessage(M64MSG_WARNING, "Fallback for Video plugin API (%02i.%02i.%02i) < 2.2.0. Resizable video will not work", VERSION_PRINTF_SPLIT(APIVersion));
-            gfx.resizeVideoOutput = dummyvideo_ResizeVideoOutput;
-        }
-
-        l_GfxAttached = 1;
     }
     else
+    {
         plugin_disconnect_gfx();
+        return M64ERR_INPUT_INVALID;
+    }
+
+    return M64ERR_SUCCESS;
+}
+
+static m64p_error plugin_connect_gfx(gfx_plugin_functions* funcs)
+{
+    /* attach the Video plugin function pointers */
+    m64p_plugin_type PluginType;
+    int PluginVersion, APIVersion;
+
+    if (l_GfxAttached)
+        return M64ERR_INVALID_STATE;
+
+    gfx.getVersion = funcs->getVersion;
+    gfx.changeWindow = funcs->changeWindow;
+    gfx.initiateGFX = funcs->initiateGFX;
+    gfx.moveScreen = funcs->moveScreen;
+    gfx.processDList = funcs->processDList;
+    gfx.processRDPList = funcs->processRDPList;
+    gfx.romClosed = funcs->romClosed;
+    gfx.romOpen = funcs->romOpen;
+    gfx.showCFB = funcs->showCFB;
+    gfx.updateScreen = funcs->updateScreen;
+    gfx.viStatusChanged = funcs->viStatusChanged;
+    gfx.viWidthChanged = funcs->viWidthChanged;
+    gfx.readScreen = funcs->readScreen;
+    gfx.setRenderingCallback = funcs->setRenderingCallback;
+    gfx.fBRead = funcs->fBRead;
+    gfx.fBWrite = funcs->fBWrite;
+    gfx.fBGetFrameBufferInfo = funcs->fBGetFrameBufferInfo;
+    gfx.resizeVideoOutput = funcs->resizeVideoOutput;
+
+    /* check the version info */
+    (*gfx.getVersion)(&PluginType, &PluginVersion, &APIVersion, NULL, NULL);
+    if (PluginType != M64PLUGIN_GFX || (APIVersion & 0xffff0000) != (GFX_API_VERSION & 0xffff0000))
+    {
+        DebugMessage(M64MSG_ERROR, "incompatible Video plugin");
+        plugin_disconnect_gfx();
+        return M64ERR_INCOMPATIBLE;
+    }
+
+    /* handle backwards-compatibility */
+    if (APIVersion < 0x020100)
+    {
+        DebugMessage(M64MSG_WARNING, "Fallback for Video plugin API (%02i.%02i.%02i) < 2.1.0. Screenshots may contain On Screen Display text", VERSION_PRINTF_SPLIT(APIVersion));
+        // tell the video plugin to make its rendering callback to me (it's old, and doesn't have the bScreenRedrawn flag)
+        gfx.setRenderingCallback(backcompat_videoRenderCallback);
+        l_old1SetRenderingCallback = gfx.setRenderingCallback; // save this just for future use
+        gfx.setRenderingCallback = (ptr_SetRenderingCallback) backcompat_setRenderCallbackIntercept;
+    }
+    if (APIVersion < 0x20200 || gfx.resizeVideoOutput == NULL)
+    {
+        DebugMessage(M64MSG_WARNING, "Fallback for Video plugin API (%02i.%02i.%02i) < 2.2.0. Resizable video will not work", VERSION_PRINTF_SPLIT(APIVersion));
+        gfx.resizeVideoOutput = dummyvideo_ResizeVideoOutput;
+    }
+
+    l_GfxAttached = 1;
 
     return M64ERR_SUCCESS;
 }
@@ -441,40 +464,53 @@ static void plugin_disconnect_rsp(void)
     l_RspAttached = 0;
 }
 
-static m64p_error plugin_connect_rsp(m64p_dynlib_handle plugin_handle)
+static m64p_error plugin_connect_rsp_api_dynlib(m64p_dynlib_handle plugin_handle, rsp_plugin_functions* out_funcs)
 {
-    /* attach the RSP plugin function pointers */
     if (plugin_handle != NULL)
     {
-        m64p_plugin_type PluginType;
-        int PluginVersion, APIVersion;
-
-        if (l_RspAttached)
-            return M64ERR_INVALID_STATE;
-
-        if (!GET_FUNC(ptr_PluginGetVersion, rsp.getVersion, "PluginGetVersion") ||
-            !GET_FUNC(ptr_DoRspCycles, rsp.doRspCycles, "DoRspCycles") ||
-            !GET_FUNC(ptr_InitiateRSP, rsp.initiateRSP, "InitiateRSP") ||
-            !GET_FUNC(ptr_RomClosed, rsp.romClosed, "RomClosed"))
+        if (!GET_FUNC(ptr_PluginGetVersion, out_funcs->getVersion, "PluginGetVersion") ||
+            !GET_FUNC(ptr_DoRspCycles, out_funcs->doRspCycles, "DoRspCycles") ||
+            !GET_FUNC(ptr_InitiateRSP, out_funcs->initiateRSP, "InitiateRSP") ||
+            !GET_FUNC(ptr_RomClosed, out_funcs->romClosed, "RomClosed"))
         {
             DebugMessage(M64MSG_ERROR, "broken RSP plugin; function(s) not found.");
-            plugin_disconnect_rsp();
             return M64ERR_INPUT_INVALID;
         }
-
-        /* check the version info */
-        (*rsp.getVersion)(&PluginType, &PluginVersion, &APIVersion, NULL, NULL);
-        if (PluginType != M64PLUGIN_RSP || (APIVersion & 0xffff0000) != (RSP_API_VERSION & 0xffff0000))
-        {
-            DebugMessage(M64MSG_ERROR, "incompatible RSP plugin");
-            plugin_disconnect_rsp();
-            return M64ERR_INCOMPATIBLE;
-        }
-
-        l_RspAttached = 1;
     }
     else
+    {
         plugin_disconnect_rsp();
+        return M64ERR_INPUT_INVALID;
+    }
+
+    return M64ERR_SUCCESS;
+}
+
+static m64p_error plugin_connect_rsp(rsp_plugin_functions* funcs)
+{
+    /* attach the RSP plugin function pointers */
+
+    m64p_plugin_type PluginType;
+    int PluginVersion, APIVersion;
+
+    if (l_RspAttached)
+        return M64ERR_INVALID_STATE;
+
+    rsp.getVersion = funcs->getVersion;
+    rsp.doRspCycles = funcs->doRspCycles;
+    rsp.initiateRSP = funcs->initiateRSP;
+    rsp.romClosed = funcs->romClosed;
+
+    /* check the version info */
+    (*rsp.getVersion)(&PluginType, &PluginVersion, &APIVersion, NULL, NULL);
+    if (PluginType != M64PLUGIN_RSP || (APIVersion & 0xffff0000) != (RSP_API_VERSION & 0xffff0000))
+    {
+        DebugMessage(M64MSG_ERROR, "incompatible RSP plugin");
+        plugin_disconnect_rsp();
+        return M64ERR_INCOMPATIBLE;
+    }
+
+    l_RspAttached = 1;
 
     return M64ERR_SUCCESS;
 }
@@ -521,19 +557,63 @@ m64p_error plugin_connect(m64p_plugin_type type, m64p_dynlib_handle plugin_handl
     switch(type)
     {
         case M64PLUGIN_GFX:
+        {
             if (plugin_handle != NULL && (l_AudioAttached || l_InputAttached || l_RspAttached))
                 DebugMessage(M64MSG_WARNING, "Front-end bug: plugins are attached in wrong order.");
-            return plugin_connect_gfx(plugin_handle);
+
+            gfx_plugin_functions funcs;
+
+            if (plugin_connect_gfx_api_dynlib(plugin_handle, &funcs) != M64ERR_SUCCESS)
+                return M64ERR_INPUT_INVALID;
+
+            return plugin_connect_gfx(&funcs);
+        }
         case M64PLUGIN_AUDIO:
+        {
             if (plugin_handle != NULL && (l_InputAttached || l_RspAttached))
                 DebugMessage(M64MSG_WARNING, "Front-end bug: plugins are attached in wrong order.");
             return plugin_connect_audio(plugin_handle);
+        }
         case M64PLUGIN_INPUT:
+        {
             if (plugin_handle != NULL && (l_RspAttached))
                 DebugMessage(M64MSG_WARNING, "Front-end bug: plugins are attached in wrong order.");
             return plugin_connect_input(plugin_handle);
+        }
         case M64PLUGIN_RSP:
-            return plugin_connect_rsp(plugin_handle);
+        {
+            rsp_plugin_functions funcs;
+
+            if (plugin_connect_rsp_api_dynlib(plugin_handle, &funcs) != M64ERR_SUCCESS)
+                return M64ERR_INPUT_INVALID;
+
+            return plugin_connect_rsp(&funcs);
+        }
+        default:
+            return M64ERR_INPUT_INVALID;
+    }
+
+    return M64ERR_INTERNAL;
+}
+
+m64p_error plugin_connect_funcs(m64p_plugin_type type, void* funcs)
+{
+    switch (type)
+    {
+        case M64PLUGIN_GFX:
+            if (funcs != NULL && (l_AudioAttached || l_InputAttached || l_RspAttached))
+                DebugMessage(M64MSG_WARNING, "Front-end bug: plugins are attached in wrong order.");
+            return plugin_connect_gfx((gfx_plugin_functions*)funcs);
+        case M64PLUGIN_AUDIO:
+            if (funcs != NULL && (l_InputAttached || l_RspAttached))
+                DebugMessage(M64MSG_WARNING, "Front-end bug: plugins are attached in wrong order.");
+            return M64ERR_INTERNAL; // FIXME: TODO!!!!
+        case M64PLUGIN_INPUT:
+            if (funcs != NULL && (l_RspAttached))
+                DebugMessage(M64MSG_WARNING, "Front-end bug: plugins are attached in wrong order.");
+            return M64ERR_INTERNAL; // FIXME: TODO!!!!
+        case M64PLUGIN_RSP:
+            return plugin_connect_rsp((rsp_plugin_functions*)funcs);
         default:
             return M64ERR_INPUT_INVALID;
     }

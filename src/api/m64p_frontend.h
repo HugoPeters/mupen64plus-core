@@ -66,9 +66,13 @@ EXPORT m64p_error CALL CoreShutdown(void);
  * This function attaches the given plugin to the emulator core. There can only
  * be one plugin of each type attached to the core at any given time. 
  */
-typedef m64p_error (*ptr_CoreAttachPlugin)(m64p_plugin_type, m64p_dynlib_handle);
+typedef m64p_error(*ptr_CoreAttachPlugin)(m64p_plugin_type, m64p_dynlib_handle);
 #if defined(M64P_CORE_PROTOTYPES)
 EXPORT m64p_error CALL CoreAttachPlugin(m64p_plugin_type, m64p_dynlib_handle);
+#endif
+
+#if defined(M64P_CORE_PROTOTYPES)
+EXPORT m64p_error CALL CoreAttachPluginFuncs(m64p_plugin_type, void*);
 #endif
 
 /* CoreDetachPlugin()
