@@ -88,6 +88,8 @@
 #include "lirc.h"
 #endif //WITH_LIRC
 
+#include "wk_api.h"
+
 /* version number for Core config section */
 #define CONFIG_PARAM_VERSION 1.01
 
@@ -932,6 +934,8 @@ static void apply_speed_limiter(void)
 
 #ifdef M64_USE_SDL
        SDL_Delay(sleepMs);
+#else
+       wk_sleep(sleepMs);
 #endif
     }
 
@@ -1484,7 +1488,7 @@ m64p_error main_run(void)
 
 
     /* take the r4300 emulator mode from the config file at this point and cache it in a global variable */
-    emumode = ConfigGetParamInt(g_CoreConfig, "R4300Emulator");
+    emumode = EMUMODE_INTERPRETER;//ConfigGetParamInt(g_CoreConfig, "R4300Emulator");
 
     /* set some other core parameters based on the config file values */
     savestates_set_autoinc_slot(ConfigGetParamBool(g_CoreConfig, "AutoStateSlotIncrement"));

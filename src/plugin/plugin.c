@@ -391,50 +391,72 @@ static void plugin_disconnect_input(void)
     l_InputAttached = 0;
 }
 
-static m64p_error plugin_connect_input(m64p_dynlib_handle plugin_handle)
+static m64p_error plugin_connect_input_api_dynlib(m64p_dynlib_handle plugin_handle, input_plugin_functions* out_funcs)
 {
-    /* attach the Input plugin function pointers */
     if (plugin_handle != NULL)
     {
-        m64p_plugin_type PluginType;
-        int PluginVersion, APIVersion;
-
-        if (l_InputAttached)
-            return M64ERR_INVALID_STATE;
-
-        if (!GET_FUNC(ptr_PluginGetVersion, input.getVersion, "PluginGetVersion") ||
-            !GET_FUNC(ptr_ControllerCommand, input.controllerCommand, "ControllerCommand") ||
-            !GET_FUNC(ptr_GetKeys, input.getKeys, "GetKeys") ||
-            !GET_FUNC(ptr_InitiateControllers, input.initiateControllers, "InitiateControllers") ||
-            !GET_FUNC(ptr_ReadController, input.readController, "ReadController") ||
-            !GET_FUNC(ptr_RomOpen, input.romOpen, "RomOpen") ||
-            !GET_FUNC(ptr_RomClosed, input.romClosed, "RomClosed") ||
-            !GET_FUNC(ptr_SDL_KeyDown, input.keyDown, "SDL_KeyDown") ||
-            !GET_FUNC(ptr_SDL_KeyUp, input.keyUp, "SDL_KeyUp"))
+        /* set function pointers for required functions */
+        if (!GET_FUNC(ptr_PluginGetVersion, out_funcs->getVersion, "PluginGetVersion") ||
+            !GET_FUNC(ptr_ControllerCommand, out_funcs->controllerCommand, "ControllerCommand") ||
+            !GET_FUNC(ptr_GetKeys, out_funcs->getKeys, "GetKeys") ||
+            !GET_FUNC(ptr_InitiateControllers, out_funcs->initiateControllers, "InitiateControllers") ||
+            !GET_FUNC(ptr_ReadController, out_funcs->readController, "ReadController") ||
+            !GET_FUNC(ptr_RomOpen, out_funcs->romOpen, "RomOpen") ||
+            !GET_FUNC(ptr_RomClosed, out_funcs->romClosed, "RomClosed") ||
+            !GET_FUNC(ptr_SDL_KeyDown, out_funcs->keyDown, "SDL_KeyDown") ||
+            !GET_FUNC(ptr_SDL_KeyUp, out_funcs->keyUp, "SDL_KeyUp"))
         {
-            DebugMessage(M64MSG_ERROR, "broken Input plugin; function(s) not found.");
-            plugin_disconnect_input();
+            DebugMessage(M64MSG_ERROR, "broken input plugin; function(s) not found.");
             return M64ERR_INPUT_INVALID;
         }
 
-        /* check the version info */
-        (*input.getVersion)(&PluginType, &PluginVersion, &APIVersion, NULL, NULL);
-        if (PluginType != M64PLUGIN_INPUT || (APIVersion & 0xffff0000) != (INPUT_API_VERSION & 0xffff0000) || APIVersion < 0x020100)
+        if (!GET_FUNC(ptr_RenderCallback, out_funcs->renderCallback, "RenderCallback"))
         {
-            DebugMessage(M64MSG_ERROR, "incompatible Input plugin");
-            plugin_disconnect_input();
-            return M64ERR_INCOMPATIBLE;
+            // DebugMessage(M64MSG_INFO, "input plugin did not specify a render callback; there will be no on screen display by the input plugin.");
         }
-
-        if (!GET_FUNC(ptr_RenderCallback, input.renderCallback, "RenderCallback"))
-        {
-            DebugMessage(M64MSG_INFO, "input plugin did not specify a render callback; there will be no on screen display by the input plugin.");
-        }
-
-        l_InputAttached = 1;
     }
     else
+    {
         plugin_disconnect_input();
+        return M64ERR_INPUT_INVALID;
+    }
+
+    return M64ERR_SUCCESS;
+}
+
+static m64p_error plugin_connect_input(input_plugin_functions* funcs)
+{
+    /* attach the Input plugin function pointers */
+    m64p_plugin_type PluginType;
+    int PluginVersion, APIVersion;
+
+    if (l_InputAttached)
+        return M64ERR_INVALID_STATE;
+
+    input.getVersion = funcs->getVersion;
+    input.controllerCommand = funcs->controllerCommand;
+    input.getKeys = funcs->getKeys;
+    input.initiateControllers = funcs->initiateControllers;
+    input.readController = funcs->readController;
+    input.romOpen = funcs->romOpen;
+    input.romClosed = funcs->romClosed;
+    input.keyDown = funcs->keyDown;
+    input.keyUp = funcs->keyUp;
+    input.renderCallback = funcs->renderCallback;
+    input.getVersion = funcs->getVersion;
+    input.getVersion = funcs->getVersion;
+    input.getVersion = funcs->getVersion;
+
+    /* check the version info */
+    (*input.getVersion)(&PluginType, &PluginVersion, &APIVersion, NULL, NULL);
+    if (PluginType != M64PLUGIN_INPUT || (APIVersion & 0xffff0000) != (INPUT_API_VERSION & 0xffff0000) || APIVersion < 0x020100)
+    {
+        DebugMessage(M64MSG_ERROR, "incompatible Input plugin");
+        plugin_disconnect_input();
+        return M64ERR_INCOMPATIBLE;
+    }
+
+    l_InputAttached = 1;
 
     return M64ERR_SUCCESS;
 }
@@ -578,7 +600,13 @@ m64p_error plugin_connect(m64p_plugin_type type, m64p_dynlib_handle plugin_handl
         {
             if (plugin_handle != NULL && (l_RspAttached))
                 DebugMessage(M64MSG_WARNING, "Front-end bug: plugins are attached in wrong order.");
-            return plugin_connect_input(plugin_handle);
+
+            input_plugin_functions funcs;
+
+            if (plugin_connect_input_api_dynlib(plugin_handle, &funcs) != M64ERR_SUCCESS)
+                return M64ERR_INPUT_INVALID;
+
+            return plugin_connect_input(&funcs);
         }
         case M64PLUGIN_RSP:
         {
@@ -611,7 +639,7 @@ m64p_error plugin_connect_funcs(m64p_plugin_type type, void* funcs)
         case M64PLUGIN_INPUT:
             if (funcs != NULL && (l_RspAttached))
                 DebugMessage(M64MSG_WARNING, "Front-end bug: plugins are attached in wrong order.");
-            return M64ERR_INTERNAL; // FIXME: TODO!!!!
+            return plugin_connect_input((gfx_plugin_functions*)funcs);
         case M64PLUGIN_RSP:
             return plugin_connect_rsp((rsp_plugin_functions*)funcs);
         default:

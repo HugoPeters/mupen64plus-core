@@ -18,6 +18,7 @@
 ;Free Software Foundation, Inc.,
 ;51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+
 %include "asm_defines_nasm.h"
 
 %ifidn __OUTPUT_FORMAT__,elf
@@ -110,3 +111,4 @@ _A2:
     mov  QWORD [rel g_dev_r4300_recomp_save_rsp], 0
     mov  QWORD [rel g_dev_r4300_recomp_save_rip], 0
     ret
+

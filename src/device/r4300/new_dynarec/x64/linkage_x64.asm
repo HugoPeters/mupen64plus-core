@@ -16,6 +16,8 @@
 ;Free Software Foundation, Inc.,                                       
 ;51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.          
 
+%ifdef NEW_DYNAREC
+
 %include "asm_defines_nasm.h"
 
 %ifidn __OUTPUT_FORMAT__,elf
@@ -385,3 +387,5 @@ invalidate_block_call:
 breakpoint:
     int    3
     ret
+
+%endif

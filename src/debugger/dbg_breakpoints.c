@@ -184,21 +184,24 @@ int check_breakpoints_on_mem_access(uint32_t pc, uint32_t address, uint32_t size
     //range to check, flags specifies the flags that all need to be set.
     //It automatically stops and updates the debugger on hit, so the memory access
     //functions only need to call it and can discard the result.
-    int bpt;
-    if (g_dbg_runstate == M64P_DBG_RUNSTATE_RUNNING) {
-        bpt = lookup_breakpoint(address, size, flags);
-        if (bpt != -1) {
-            breakpointAccessed = address;
-            breakpointFlag = flags;
-            if (BPT_CHECK_FLAG(g_Breakpoints[bpt], M64P_BKP_FLAG_LOG))
-                log_breakpoint(pc, flags, address);
+    int bpt = lookup_breakpoint(address, size, flags);
+    if (bpt != -1)
+    {
+        if (BPT_CHECK_FLAG(g_Breakpoints[bpt], M64P_BKP_FLAG_LOG))
+            log_breakpoint(pc, flags, address);
 
+        if (BPT_CHECK_FLAG(g_Breakpoints[bpt], M64P_BKP_FLAG_CALLBACK))
+            g_Breakpoints[bpt].callback(g_Breakpoints[bpt].callbackArg, pc, address, size);
+
+        if (g_dbg_runstate == M64P_DBG_RUNSTATE_RUNNING)
+        {
             g_dbg_runstate = M64P_DBG_RUNSTATE_PAUSED;
             update_debugger(pc);
-
-            return bpt;
         }
+
+        return bpt;
     }
+
     return -1;
 }
 

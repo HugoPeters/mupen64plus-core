@@ -25,6 +25,10 @@
 #ifndef __SAVESTAVES_H__
 #define __SAVESTAVES_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum _savestates_job
 {
     savestates_job_nothing,
@@ -44,6 +48,7 @@ savestates_job savestates_get_job(void);
 void savestates_set_job(savestates_job j, savestates_type t, const char *fn);
 void savestates_init(void);
 void savestates_deinit(void);
+savestates_type savestates_detect_type(const char *filepath);
 
 int savestates_load(void);
 int savestates_save(void);
@@ -52,6 +57,14 @@ void savestates_select_slot(unsigned int s);
 unsigned int savestates_get_slot(void);
 void savestates_set_autoinc_slot(int b);
 void savestates_inc_slot(void);
+
+unsigned int savestates_get_buffer_size();
+void savestates_save_to_buffer(const struct device* dev, char* outBuffer);
+int savestates_load_from_buffer(struct device* dev, const char* inBuffer);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __SAVESTAVES_H__ */
 

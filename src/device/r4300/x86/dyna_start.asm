@@ -18,6 +18,8 @@
 ;Free Software Foundation, Inc.,
 ;51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+%ifndef __x86_64__
+
 %include "asm_defines_nasm.h"
 
 %ifidn __OUTPUT_FORMAT__,elf
@@ -126,3 +128,5 @@ point2:
     mov  DWORD [find_local_data(g_dev_r4300_recomp_save_edi)], 0
     mov  DWORD [find_local_data(g_dev_r4300_recomp_save_eip)], 0
     ret
+
+%endif

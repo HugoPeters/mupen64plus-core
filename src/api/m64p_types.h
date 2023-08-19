@@ -376,7 +376,8 @@ typedef enum {
   M64P_BKP_FLAG_READ = 0x02,
   M64P_BKP_FLAG_WRITE = 0x04,
   M64P_BKP_FLAG_EXEC = 0x08,
-  M64P_BKP_FLAG_LOG = 0x10 /* Log to the console when this breakpoint hits */
+  M64P_BKP_FLAG_LOG = 0x10, /* Log to the console when this breakpoint hits */
+  M64P_BKP_FLAG_CALLBACK = 0x20
 } m64p_dbg_bkp_flags;
 
 #define BPT_CHECK_FLAG(a, b)  ((a.flags & b) == b)
@@ -388,6 +389,8 @@ typedef struct {
   uint32_t     address;
   uint32_t     endaddr;
   unsigned int flags;
+  void(*callback)(void* arg, uint32_t pc, uint32_t address, uint32_t size);
+  void*         callbackArg;
 } m64p_breakpoint;
 
 /* ------------------------------------------------- */

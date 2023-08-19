@@ -29,6 +29,7 @@
 #include "dbg_breakpoints.h"
 #include "dbg_debugger.h"
 #include "dbg_memory.h"
+#include "main/wk_api.h"
 
 #ifdef DBG
 
@@ -37,7 +38,11 @@ int g_DebuggerActive = 0;    // whether the debugger is enabled or not
 m64p_dbg_runstate g_dbg_runstate;
 
 // Holds the number of pending steps the debugger needs to perform.
+#ifdef M64_USE_SDL
 static SDL_sem *sem_pending_steps;
+#else
+static void* sem_pending_steps;
+#endif
 
 uint32_t previousPC;
 
@@ -53,6 +58,12 @@ void init_debugger()
         DebugMessage(M64MSG_WARNING, "Front-end debugger callbacks are not set, so debugger will remain disabled.");
         return;
     }
+
+#ifdef M64_USE_SDL
+	sem_pending_steps = SDL_CreateSemaphore(0);
+#else
+	sem_pending_steps = wk_semaphore_create(0, 1);
+#endif
     
     g_DebuggerActive = 1;
     g_dbg_runstate = M64P_DBG_RUNSTATE_PAUSED;
@@ -60,14 +71,17 @@ void init_debugger()
     DebuggerCallback(DEBUG_UI_INIT, 0); /* call front-end to initialize user interface */
 
     init_host_disassembler();
-
-    sem_pending_steps = SDL_CreateSemaphore(0);
 }
 
 void destroy_debugger()
 {
+#ifdef M64_USE_SDL
     SDL_DestroySemaphore(sem_pending_steps);
     sem_pending_steps = NULL;
+#else
+    wk_semaphore_destroy(sem_pending_steps);
+    sem_pending_steps = NULL;
+#endif
     g_DebuggerActive = 0;
 }
 
@@ -97,7 +111,11 @@ void update_debugger(uint32_t pc)
     }
     if (g_dbg_runstate == M64P_DBG_RUNSTATE_PAUSED) {
         // The emulation thread is blocked until a step call via the API.
+#ifdef M64_USE_SDL
         SDL_SemWait(sem_pending_steps);
+#else
+        wk_semaphore_get(sem_pending_steps);
+#endif
     }
 
     previousPC = pc;
@@ -105,7 +123,11 @@ void update_debugger(uint32_t pc)
 
 void debugger_step()
 {
+#ifdef M64_USE_SDL
     SDL_SemPost(sem_pending_steps);
+#else
+    wk_semaphore_put(sem_pending_steps);
+#endif
 }
 
 #endif

@@ -53,6 +53,22 @@
 #   define offsetof(TYPE,MEMBER) ((unsigned int) &((TYPE*)0)->MEMBER)
 #endif
 
+#ifdef DBG
+// interpret load/stores to enable rdram trace
+#define INTERPRET_LB
+#define INTERPRET_LBU
+#define INTERPRET_LH
+#define INTERPRET_LHU
+#define INTERPRET_LW
+#define INTERPRET_LWU
+#define INTERPRET_LD
+
+#define INTERPRET_SB
+#define INTERPRET_SH
+#define INTERPRET_SW
+#define INTERPRET_SD
+#endif
+
 
 /* These are constants with addresses so that FLDCW can read them */
 static const uint16_t trunc_mode = 0xf3f;

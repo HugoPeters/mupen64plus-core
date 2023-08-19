@@ -54,6 +54,9 @@ struct memory
     struct mem_handler handlers[0x10000];
     void* base;
 
+    struct mem_mapping mappings[64];
+    int num_mappings;
+
 #ifdef DBG
     int memtype[0x10000];
     unsigned char bp_checks[0x10000];

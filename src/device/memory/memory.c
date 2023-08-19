@@ -21,8 +21,12 @@
 
 #include "memory.h"
 
+#include <stdbool.h>
+
 #include "api/callbacks.h"
 #include "api/m64p_types.h"
+
+#include "main/macros.h"
 
 #include "device/device.h"
 #include "device/rcp/rsp/rsp_core.h"
@@ -174,6 +178,10 @@ void init_memory(struct memory* mem,
     memset(mem->bp_checks, 0, 0x10000*sizeof(mem->bp_checks[0]));
     memcpy(&mem->dbg_handler, dbg_handler, sizeof(*dbg_handler));
 #endif
+
+    assert(mappings_count <= ARRAY_SIZE(mem->mappings));
+    mem->num_mappings = mappings_count;
+    memcpy(mem->mappings, mappings, sizeof(struct mem_mapping) * mappings_count);
 
     mem->base = base;
 
